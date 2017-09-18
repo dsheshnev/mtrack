@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,7 +15,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var createStmt, deleteStmt, editStmt, getStmt *sql.Stmt
+var createStmt, deleteStmt, editStmt, getStmt, getByIDStmt *sql.Stmt
+
+// wd, _ := os.Getwd()
 
 // Record - type to store
 type Record struct {
@@ -41,7 +44,8 @@ func logError(err error) {
 }
 
 func connectDB() (db *sql.DB, err error) {
-	db, err = sql.Open("sqlite3", "./records.db")
+	wd, _ := os.Getwd()
+	db, err = sql.Open("sqlite3", fmt.Sprintf("%s/records.db", wd))
 	logError(err)
 	ct, err := db.Prepare(`CREATE TABLE records(id integer PRIMARY KEY AUTOINCREMENT, date datetime, amount float, comment text);`)
 	if err == nil {
@@ -58,9 +62,11 @@ func setStatements() {
 	logError(err)
 	deleteStmt, err = db.Prepare("DELETE FROM records WHERE id=?")
 	logError(err)
-	editStmt, err = db.Prepare("UPDATE records SET date=?, amount=?, comment=?")
+	editStmt, err = db.Prepare("UPDATE records SET date=?, amount=?, comment=? WHERE id=?")
 	logError(err)
 	getStmt, err = db.Prepare("SELECT * FROM records")
+	logError(err)
+	getByIDStmt, err = db.Prepare("SELECT * FROM records WHERE id=?")
 	logError(err)
 }
 
@@ -71,6 +77,36 @@ func createRecord(rw http.ResponseWriter, request *http.Request) {
 	amount, _ := strconv.ParseFloat(request.Form["amount"][0], 64)
 	comment := strings.Join(request.Form["comment"], "\n")
 	res, err := createStmt.Exec(time.Now(), amount, comment)
+	logError(err)
+	fmt.Println(res)
+	incorrectRequest(rw, err)
+}
+
+func editRecord(rw http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		log.Fatal(err)
+	}
+	id, _ := strconv.Atoi(request.Form.Get("id"))
+	record := getByID(id)
+	date := request.Form.Get("date")
+	amount, _ := strconv.ParseFloat(request.Form.Get("amount"), 64)
+	comment := strings.Join(request.Form["comment"], "\n")
+	if date != "" {
+		date, err := time.Parse(fmt.Sprint(time.Now()), date)
+		if err != nil {
+			logError(err)
+		} else {
+			record.Date = date
+		}
+	}
+	if amount != 0 {
+		record.Amount = amount
+	}
+	if comment != "" {
+		record.Comment = comment
+	}
+
+	res, err := editStmt.Exec(time.Now(), amount, comment, id)
 	logError(err)
 	fmt.Println(res)
 	incorrectRequest(rw, err)
@@ -91,7 +127,18 @@ func getAll() (records []Record) {
 		logError(err)
 		records = append(records, newRecord)
 	}
-	rows.Close() //good habit to close
+	rows.Close()
+	return
+}
+
+func getByID(id int) (record Record) {
+	rows, err := getByIDStmt.Query(id)
+	defer rows.Close()
+	logError(err)
+	for rows.Next() {
+		err = rows.Scan(&record.ID, &record.Date, &record.Amount, &record.Comment)
+		logError(err)
+	}
 	return
 }
 
@@ -99,7 +146,9 @@ func getRecords(rw http.ResponseWriter, request *http.Request) {
 	// b, err := json.Marshal(getAll())
 	// logError(err)
 	// rw.Write(b)
-	pageTmpl, err := template.ParseFiles("./templates/index.html", "./templates/record.html")
+	wd, _ := os.Getwd()
+	templateFiles := []string{wd + "/templates/index.html", wd + "/templates/record.html"}
+	pageTmpl, err := template.ParseFiles(templateFiles...)
 	logError(err)
 	err = pageTmpl.Execute(rw, getAll())
 	logError(err)
@@ -124,7 +173,7 @@ func main() {
 	http.HandleFunc("/create/", createRecord)
 	http.HandleFunc("/get/", getRecords)
 	http.HandleFunc("/delete/", deleteRecord)
-	//http.HandleFunc("/edit/", deleteRecord)
+	http.HandleFunc("/edit/", editRecord)
 
 	http.ListenAndServe(":9090", nil)
 }

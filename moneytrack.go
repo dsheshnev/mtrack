@@ -55,7 +55,7 @@ func connectDB() (db *sql.DB, err error) {
 	return
 }
 
-func setStatements() {
+func init() {
 	db, err := connectDB()
 	logError(err)
 	createStmt, err = db.Prepare("INSERT INTO records(date, amount, comment) values(?,?,?)")
@@ -88,6 +88,9 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 	}
 	id, _ := strconv.Atoi(request.Form.Get("id"))
 	record := getByID(id)
+	// fmt.Printf("R amo:\t%v\n", record.Amount)
+	// fmt.Printf("R date:\t%s\n", record.Date)
+	// fmt.Printf("R comment:\t%s\n", record.Comment)
 	date := request.Form.Get("date")
 	amount, _ := strconv.ParseFloat(request.Form.Get("amount"), 64)
 	comment := strings.Join(request.Form["comment"], "\n")
@@ -103,12 +106,14 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 		record.Amount = amount
 	}
 	if comment != "" {
+		// fmt.Printf("Write comment:\t%s\n", comment)
 		record.Comment = comment
+	} else {
+		// fmt.Printf("Was comment:\t%s\n", record.Comment)
 	}
 
-	res, err := editStmt.Exec(time.Now(), amount, comment, id)
+	_, err := editStmt.Exec(record.Date, record.Amount, record.Comment, id)
 	logError(err)
-	fmt.Println(res)
 	incorrectRequest(rw, err)
 }
 
@@ -143,9 +148,6 @@ func getByID(id int) (record Record) {
 }
 
 func getRecords(rw http.ResponseWriter, request *http.Request) {
-	// b, err := json.Marshal(getAll())
-	// logError(err)
-	// rw.Write(b)
 	wd, _ := os.Getwd()
 	templateFiles := []string{wd + "/templates/index.html", wd + "/templates/record.html"}
 	pageTmpl, err := template.ParseFiles(templateFiles...)
@@ -163,15 +165,12 @@ func deleteRecord(rw http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		incorrectRequest(rw, err)
 	}
-	var b []byte
-	rw.Write(b)
+	incorrectRequest(rw, err)
 }
 
 func main() {
-	setStatements()
-
 	http.HandleFunc("/create/", createRecord)
-	http.HandleFunc("/get/", getRecords)
+	http.HandleFunc("/", getRecords)
 	http.HandleFunc("/delete/", deleteRecord)
 	http.HandleFunc("/edit/", editRecord)
 

@@ -17,8 +17,6 @@ import (
 
 var createStmt, deleteStmt, editStmt, getStmt, getByIDStmt *sql.Stmt
 
-// wd, _ := os.Getwd()
-
 // Record - type to store
 type Record struct {
 	ID      int       `json:"id"`
@@ -76,10 +74,20 @@ func createRecord(rw http.ResponseWriter, request *http.Request) {
 	}
 	amount, _ := strconv.ParseFloat(request.Form["amount"][0], 64)
 	comment := strings.Join(request.Form["comment"], "\n")
-	res, err := createStmt.Exec(time.Now(), amount, comment)
+	dateString := strings.Join(request.Form["date"], "")
+	var date time.Time
+	if dateString != "" {
+		var err error
+		date, err = time.Parse("2006-01-02", dateString)
+		if err != nil {
+			date = time.Now()
+			logError(err)
+		}
+	}
+	res, err := createStmt.Exec(date, amount, comment)
 	logError(err)
 	fmt.Println(res)
-	incorrectRequest(rw, err)
+	http.Redirect(rw, request, "/", 302)
 }
 
 func editRecord(rw http.ResponseWriter, request *http.Request) {
@@ -95,7 +103,7 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 	amount, _ := strconv.ParseFloat(request.Form.Get("amount"), 64)
 	comment := strings.Join(request.Form["comment"], "\n")
 	if date != "" {
-		date, err := time.Parse(fmt.Sprint(time.Now()), date)
+		date, err := time.Parse("2006-01-02", date)
 		if err != nil {
 			logError(err)
 		} else {
@@ -114,7 +122,7 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 
 	_, err := editStmt.Exec(record.Date, record.Amount, record.Comment, id)
 	logError(err)
-	incorrectRequest(rw, err)
+	http.Redirect(rw, request, "/", 302)
 }
 
 func deleteByID(id int) (err error) {
@@ -165,7 +173,7 @@ func deleteRecord(rw http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		incorrectRequest(rw, err)
 	}
-	incorrectRequest(rw, err)
+	http.Redirect(rw, request, "/", 302)
 }
 
 func main() {

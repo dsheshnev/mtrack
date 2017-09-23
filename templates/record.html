@@ -1,20 +1,6 @@
-<div class="row">
-    <div class="col-md-4"></div>
-    <div class="col-md-4" id="html_record_{{ .ID }}">
-        <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="heading_{{ .ID }}">
-                <h4 class="panel-title">
-                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_{{ .ID }}" aria-expanded="true" aria-controls="collapse_{{ .ID }}">
-                        {{ .Amount }} <span class="glyphicon glyphicon-rub" aria-hidden="true"></span>
-                    </a>
-                </h4>
-            </div>
-            <div id="collapse_{{ .ID }}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_{{ .ID }}">
-                <div class="panel-body">
-                    {{ .Comment }}
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4"></div>
-</div>
+<tr data_id="{{ .ID }}">
+  <th scope="row">{{ .ID }}</th>
+  <td data_amount>{{ .Amount }}</td>
+  <td data_comment>{{ .Comment }}</td>
+  <td data_date={{ .Date }}></td>
+</tr>

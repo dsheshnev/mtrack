@@ -1,18 +1,168 @@
 <html>
-    <head>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-            <!-- Latest compiled and minified CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<head>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>  -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">  -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">  -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>  -->
 
-        <!-- Optional theme -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-        <!-- Latest compiled and minified JavaScript -->
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    </head>
-    <body>
-        {{ range . }}
-            {{ template "record.html" . }}
-        {{ end }}
-    </body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <link href="http://getbootstrap.com/docs/4.0/examples/sticky-footer-navbar/sticky-footer-navbar.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav class="navbar navbar-light bg-light">
+        <a class="navbar-brand" href="#">
+            <img src="http://simpleicon.com/wp-content/uploads/coin-money-1.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+            MoneyTrack
+        </a>
+    </nav>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <table class="table table-hover ">
+                    <thead class="thead-default">
+                        <tr>
+                            <th>id</th>
+                            <th>Количество</th>
+                            <th>Комментарий</th>
+                            <th>Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range . }}
+                        {{ template "record.html" . }}
+                        {{ end }}
+                        <tr disabled>
+                          <!-- <th scope="row"></th> -->
+                          <td id="overall" class="table-secondary" colspan="4"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-4">
+                <form action="/create/">
+                    <div class="form-group row">
+                        <div class="col-md-12">
+                            <input type="hidden" class="form-control" id="id" name="id">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">
+                            <input type="number" class="form-control" id="amount" placeholder="Количество"
+                            name="amount">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">
+                            <input type="text" class="form-control" id="comment" placeholder="Комментарий"
+                            name="comment">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">
+                            <input type="date" class="form-control" id="date" placeholder="Дата"
+                            name="date">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">
+                            <input type="submit" class="form-control btn-success" id="submit" value="Создать">
+                        </div>
+                    </div>
+                    <div class="form-check">
+                      <label class="form-check-label">
+                        <input type="checkbox" class="form-check-input" id="delete_box">
+                        Удалить
+                      </label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <!-- <strong><span class="text-muted" id="overall"></span></strong> -->
+            </div>
+        </div>
+    </footer>
+    <script type="text/javascript">
+        window.onload=function(){
+            $("#delete_box").attr("disabled", true)
+            $("[data_date]").each(function(){
+                var date = $(this).attr("data_date").match(/(\d+)/g);
+                date.length = 3
+                $(this).text(date.join("/"))
+            });
+            overallResults()
+        };
+        $("tr").click(function(){
+            if($("#id").attr("value") != $(this).attr("data_id")){
+                //$(this).hide();
+                $("form")[0].action="/edit/";
+                // var id = $(this).css("data_id");
+                // console.log(id);
+                var id = $(this).attr("data_id");
+                var amount = $(this).children("[data_amount]").text();
+                var comment = $(this).children("[data_comment]").text();
+                var date = $(this).children("[data_date]").attr("data_date").match(/(\d+)/g);
+                date.length=3
+                $("#id").attr("value", id);
+                $("#amount").attr("value", amount);
+                $("#comment").attr("value", comment);
+                $("#date").attr("value", date.join("-"))
+                $("#submit").attr("value", "Изменить")
+                $("#submit").removeClass("btn-success")
+                $("#submit").addClass("btn-primary")
+                $("#delete_box").removeAttr("disabled")
+            } else {
+                clearForm()
+            }
+        });
+        $("*").click(function(){
+            if($("#delete_box").prop("checked")){
+                $("#submit").removeClass("btn-primary")
+                $("#submit").addClass("btn-danger")
+                $("#submit").attr("value", "Удалить")
+                $("form")[0].action="/delete/";
+            } else if ($("#id").attr("value")==0 || !$("#id").attr("value")) {
+                $("#submit").removeClass("btn-danger")
+                $("#submit").addClass("btn-success")
+                $("#submit").attr("value", "Создать")
+                $("form")[0].action="/create/";
+            } else {
+                $("#submit").removeClass("btn-danger")
+                $("#submit").addClass("btn-primary")
+                $("#submit").attr("value", "Изменить")
+                $("form")[0].action="/edit/";
+            }
+        });
+        function clearForm() {
+            $("form")[0].action="/create/";
+            $("#id").attr("value", 0);
+            $("#amount").removeAttr("value");
+            $("#comment").removeAttr("value");
+            var d = new Date();
+            var fd = [d.getFullYear(), d.getMonth()+1, d.getDate()]
+            if(fd[1].length==1){
+                fd[1]="0"+fd[1]
+            }
+            $("#date").attr("value", fd.join("-"));
+            $("#submit").attr("value", "Создать");
+            $("#submit").removeClass("btn-primary");
+            $("#submit").addClass("btn-success");
+            $("#delete_box").prop("checked", false);
+            $("#delete_box").attr("disabled", true);
+        }
+        function overallResults() {
+            var sum=0
+            $("[data_amount]").each(function(){
+                return sum=sum+parseInt(this.innerText);
+            })
+            $("#overall").text("\t\tИтог:\t"+sum)
+        }
+    </script>
+</body>
 </html>

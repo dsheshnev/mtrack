@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	json "encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -16,6 +17,7 @@ import (
 )
 
 var createStmt, deleteStmt, editStmt, getStmt, getByIDStmt *sql.Stmt
+var wd string
 
 // Record - type to store
 type Record struct {
@@ -36,13 +38,11 @@ func incorrectRequest(rw http.ResponseWriter, err error) {
 
 func logError(err error) {
 	if err != nil {
-		//fmt.Println(err)
 		log.Println(err)
 	}
 }
 
 func connectDB() (db *sql.DB, err error) {
-	wd, _ := os.Getwd()
 	db, err = sql.Open("sqlite3", fmt.Sprintf("%s/records.db", wd))
 	logError(err)
 	ct, err := db.Prepare(`CREATE TABLE records(id integer PRIMARY KEY AUTOINCREMENT, date datetime, amount float, comment text);`)
@@ -54,6 +54,7 @@ func connectDB() (db *sql.DB, err error) {
 }
 
 func init() {
+	wd, _ = os.Getwd()
 	db, err := connectDB()
 	logError(err)
 	createStmt, err = db.Prepare("INSERT INTO records(date, amount, comment) values(?,?,?)")
@@ -62,7 +63,8 @@ func init() {
 	logError(err)
 	editStmt, err = db.Prepare("UPDATE records SET date=?, amount=?, comment=? WHERE id=?")
 	logError(err)
-	getStmt, err = db.Prepare("SELECT * FROM records")
+	getStmt, err = db.Prepare(
+		`SELECT id, date, amount, comment FROM records ORDER BY date DESC LIMIT ? OFFSET ?`)
 	logError(err)
 	getByIDStmt, err = db.Prepare("SELECT * FROM records WHERE id=?")
 	logError(err)
@@ -96,9 +98,6 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 	}
 	id, _ := strconv.Atoi(request.Form.Get("id"))
 	record := getByID(id)
-	// fmt.Printf("R amo:\t%v\n", record.Amount)
-	// fmt.Printf("R date:\t%s\n", record.Date)
-	// fmt.Printf("R comment:\t%s\n", record.Comment)
 	date := request.Form.Get("date")
 	amount, _ := strconv.ParseFloat(request.Form.Get("amount"), 64)
 	comment := strings.Join(request.Form["comment"], "\n")
@@ -114,12 +113,8 @@ func editRecord(rw http.ResponseWriter, request *http.Request) {
 		record.Amount = amount
 	}
 	if comment != "" {
-		// fmt.Printf("Write comment:\t%s\n", comment)
 		record.Comment = comment
-	} else {
-		// fmt.Printf("Was comment:\t%s\n", record.Comment)
 	}
-
 	_, err := editStmt.Exec(record.Date, record.Amount, record.Comment, id)
 	logError(err)
 	http.Redirect(rw, request, "/", 302)
@@ -131,8 +126,8 @@ func deleteByID(id int) (err error) {
 	return
 }
 
-func getAll() (records []Record) {
-	rows, err := getStmt.Query()
+func getAll(count int, limit int) (records []Record) {
+	rows, err := getStmt.Query(count, limit)
 	logError(err)
 	var newRecord Record
 	for rows.Next() {
@@ -156,11 +151,26 @@ func getByID(id int) (record Record) {
 }
 
 func getRecords(rw http.ResponseWriter, request *http.Request) {
-	wd, _ := os.Getwd()
 	templateFiles := []string{wd + "/templates/index.html", wd + "/templates/record.html"}
 	pageTmpl, err := template.ParseFiles(templateFiles...)
 	logError(err)
-	err = pageTmpl.Execute(rw, getAll())
+	err = pageTmpl.Execute(rw, getAll(30, 0))
+	logError(err)
+}
+
+func getRecordsJSON(rw http.ResponseWriter, request *http.Request) {
+	err := request.ParseForm()
+	logError(err)
+	limit, err := strconv.Atoi(request.Form.Get("limit"))
+	logError(err)
+	offset, err := strconv.Atoi(request.Form.Get("offset"))
+	logError(err)
+	records := getAll(limit, offset)
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	rw.WriteHeader(http.StatusOK)
+	respJSON, err := json.Marshal(records)
+	logError(err)
+	_, err = rw.Write(respJSON)
 	logError(err)
 }
 
@@ -173,12 +183,15 @@ func deleteRecord(rw http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		incorrectRequest(rw, err)
 	}
-	http.Redirect(rw, request, "/", 302)
+	io.WriteString(rw, "OK")
 }
 
 func main() {
+	fs := http.FileServer(http.Dir(wd + "/static"))
+	http.Handle("/static/", http.StripPrefix("/static", fs))
 	http.HandleFunc("/create/", createRecord)
 	http.HandleFunc("/", getRecords)
+	http.HandleFunc("/get/", getRecordsJSON)
 	http.HandleFunc("/delete/", deleteRecord)
 	http.HandleFunc("/edit/", editRecord)
 
